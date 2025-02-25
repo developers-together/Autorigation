@@ -19,7 +19,7 @@ const SensorChartCard = ({
         </div>
       </div>
 
-      {/* Each chart fetches its own data from DB */}
+      {/* Each chart line can do its own subscription from /data if you want. */}
       <LineChartSensor
         dataType={dataType}
         datasetLabel={title}

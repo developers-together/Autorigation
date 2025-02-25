@@ -1,9 +1,11 @@
+// src/firebase.js
+
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
-// Your Firebase configuration object
 const firebaseConfig = {
-  apiKey: "AIzaSyBy0MWQWGOAlrSWasHzGpCP9OZP3Dv2Qzo",
+  // Your Firebase config from the console
+  apiKey: "AIzaSy...",
   authDomain: "code-crackers-54bb0.firebaseapp.com",
   databaseURL:
     "https://code-crackers-54bb0-default-rtdb.europe-west1.firebasedatabase.app",
@@ -17,7 +19,5 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Get a reference to the database service
-const database = getDatabase(app);
-
-export { database };
+// Realtime Database
+export const database = getDatabase(app);

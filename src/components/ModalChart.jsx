@@ -38,7 +38,7 @@ const ModalChart = ({
           <FiArrowRight size={24} />
         </button>
 
-        {/* Large chart container */}
+        {/* Large chart container -> same chart */}
         <div className="modal-chart-container">
           <LineChartSensor
             dataType={dataType}
