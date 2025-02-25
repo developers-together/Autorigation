@@ -9,6 +9,7 @@ const SensorChartCard = ({
   accentColor,
   dataType,
   onChartClick,
+  showFullDate,
 }) => {
   return (
     <div className="sensor-chart-card" onClick={onChartClick}>
@@ -19,11 +20,11 @@ const SensorChartCard = ({
         </div>
       </div>
 
-      {/* Each chart line can do its own subscription from /data if you want. */}
       <LineChartSensor
         dataType={dataType}
         datasetLabel={title}
         accentColor={accentColor}
+        showFullDate={showFullDate} // forward the prop
       />
     </div>
   );

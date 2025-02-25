@@ -1,5 +1,4 @@
 // src/Dashboard.jsx
-
 import React, { useState, useEffect, useMemo } from "react";
 import "./Dashboard.css";
 
@@ -12,13 +11,33 @@ import SensorChartCard from "./components/SensorChartCard";
 import LastIrrigateTable from "./components/LastIrrigateTable";
 import ModalChart from "./components/ModalChart";
 
-// Icons
 import { FaHistory, FaWifi } from "react-icons/fa";
 
 /**
- * Chart configs: dataType => "temperature" | "humidity" | "moisture" | "light".
- * We store these to pass into the SensorChartCard. currentValue is updated with the latest reading.
+ * Format "yyyy-mm-dd_HH-MM-SS" -> e.g. "02:25 : 13:01"
  */
+function formatTimestamp(str) {
+  if (!str.includes("_")) return str;
+  const [datePart, timePart] = str.split("_");
+  const [yyyy, mm, dd] = datePart.split("-");
+  const [HH, MM] = timePart.split("-");
+  return `${mm}:${dd} : ${HH}:${MM}`;
+}
+
+/**
+ * Convert a milliliter value to a string in ml or L if ≥ 1000.
+ * For example: 500 => "500 ml", 1300 => "1.30 L"
+ */
+function formatLiquid(mlAmount) {
+  if (!mlAmount || mlAmount < 0) mlAmount = 0;
+  if (mlAmount >= 1000) {
+    const liters = (mlAmount / 1000).toFixed(2);
+    return `${liters} L`;
+  }
+  return `${mlAmount} ml`;
+}
+
+// Chart config array for sensors
 const chartConfigs = [
   {
     title: "Temperature",
@@ -47,174 +66,136 @@ const chartConfigs = [
 ];
 
 const Dashboard = () => {
-  // ------------------------
-  // 1) State for DB data
-  // ------------------------
   const [dataNode, setDataNode] = useState({});
   const [monitorNode, setMonitorNode] = useState({});
+  const [totalNode, setTotalNode] = useState({});
 
-  // ------------------------
-  // 2) Fetch from Firebase
-  // ------------------------
   useEffect(() => {
-    // A) Subscribe to /data
+    // Subscribe to /data for sensor readings
     const dataRef = ref(database, "data");
     const unsubData = onValue(dataRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setDataNode(snapshot.val());
-      } else {
-        setDataNode({});
-      }
+      setDataNode(snapshot.exists() ? snapshot.val() : {});
     });
 
-    // B) Subscribe to /monitor
+    // Subscribe to /monitor for last irrigate table
     const monitorRef = ref(database, "monitor");
-    const unsubMon = onValue(monitorRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setMonitorNode(snapshot.val());
-      } else {
-        setMonitorNode({});
-      }
+    const unsubMonitor = onValue(monitorRef, (snapshot) => {
+      setMonitorNode(snapshot.exists() ? snapshot.val() : {});
+    });
+
+    // Subscribe to /total for water saved/used
+    const totalRef = ref(database, "total");
+    const unsubTotal = onValue(totalRef, (snapshot) => {
+      setTotalNode(snapshot.exists() ? snapshot.val() : {});
     });
 
     return () => {
       unsubData();
-      unsubMon();
+      unsubMonitor();
+      unsubTotal();
     };
   }, []);
 
-  // ------------------------
-  // 3) Derive "latest" reading from /data
-  //    + last connection time
-  // ------------------------
-  const {
-    latestReading, // e.g. { humidity, temperature, moisture, light, ...}
-    lastConnectionTime, // e.g. "2025-02-25_14-00-06"
-  } = useMemo(() => {
+  // ============= LATEST READING FROM "data" =============
+  const { latestReading, lastConnectionTime } = useMemo(() => {
     let latestReading = null;
     let lastConnectionTime = null;
-
-    // dataNode is an object with dateKey => randomChild => reading
-    // We'll sort date keys to find the last one
     const dateKeys = Object.keys(dataNode).sort();
-    if (dateKeys.length > 0) {
-      // e.g. "2025-02-25_14-00-06"
-      const lastDate = dateKeys[dateKeys.length - 1];
-      lastConnectionTime = lastDate;
-
-      const randomChildObj = dataNode[lastDate];
-      if (randomChildObj && typeof randomChildObj === "object") {
-        const childKeys = Object.keys(randomChildObj);
-        if (childKeys.length > 0) {
-          // We'll just take the first child for "latest"
-          latestReading = randomChildObj[childKeys[0]];
+    if (dateKeys.length) {
+      const lastKey = dateKeys[dateKeys.length - 1];
+      lastConnectionTime = lastKey;
+      const randomObj = dataNode[lastKey];
+      if (randomObj && typeof randomObj === "object") {
+        const childIds = Object.keys(randomObj);
+        if (childIds.length) {
+          latestReading = randomObj[childIds[0]];
         }
       }
     }
-
     return { latestReading, lastConnectionTime };
   }, [dataNode]);
 
-  // ------------------------
-  // 4) Water Saved/Used from /monitor
-  //    + build data for Last Irrigate
-  // ------------------------
-  const { totalWaterSaved, totalWaterUsed, lastIrrigateEvents } =
-    useMemo(() => {
-      // monitorNode might look like:
-      // {
-      //   "2025-02-25_14-00-06": { "-OJxP6jUHjOz46NitNGL": { waterUsed: -100 } },
-      //   "fbwatertime": 1,
-      //   "totalWaterSaved": 100,
-      //   "totalWaterUsed": 100
-      // }
-      const totalWaterSaved = monitorNode.totalWaterSaved || 0;
-      const totalWaterUsed = monitorNode.totalWaterUsed || 0;
+  // ============= WATER SAVED/USED FROM "total" =============
+  const { totalWaterSaved, totalWaterUsed } = useMemo(() => {
+    const savedML = totalNode.totalWaterSaved || 0;
+    const usedML = totalNode.totalWaterUsed || 0;
+    return {
+      totalWaterSaved: formatLiquid(savedML),
+      totalWaterUsed: formatLiquid(usedML),
+    };
+  }, [totalNode]);
 
-      // For the last irrigate table, we look for date-like keys in monitorNode
-      const monitorKeys = Object.keys(monitorNode).filter((k) =>
-        // naive check: if it has an underscore, might be a date
-        k.includes("_")
-      );
+  // ============= LAST IRRIGATE TABLE FROM "monitor" =============
+  const lastIrrigateEvents = useMemo(() => {
+    // "monitor" has date-keys => randomKey => { waterUsed }
+    // We'll parse them into an array for the table
+    const keys = Object.keys(monitorNode).sort();
+    let events = [];
+    keys.forEach((dateKey) => {
+      const subObj = monitorNode[dateKey];
+      if (subObj && typeof subObj === "object") {
+        Object.keys(subObj).forEach((rk) => {
+          const detail = subObj[rk];
+          if (detail && typeof detail === "object") {
+            // We'll store date/time by parsing dateKey if you want
+            // Or just store the raw dateKey
+            // waterUsed in ml => convert it
+            const waterUsedStr = formatLiquid(detail.waterUsed);
+            events.push({
+              dateKey, // e.g. "2025-02-25_15-17-07"
+              waterUsed: waterUsedStr,
+            });
+          }
+        });
+      }
+    });
+    return events;
+  }, [monitorNode]);
 
-      // Build a list of irrigation events
-      let lastIrrigateEvents = [];
-      monitorKeys.sort().forEach((mk) => {
-        const randomObj = monitorNode[mk];
-        if (randomObj && typeof randomObj === "object") {
-          // e.g. { "-OJxP6jUHjOz46NitNGL": { waterUsed: -100 } }
-          Object.keys(randomObj).forEach((rk) => {
-            const event = randomObj[rk];
-            if (event && typeof event === "object") {
-              lastIrrigateEvents.push({
-                dateKey: mk,
-                randomId: rk,
-                ...event,
-              });
-            }
-          });
-        }
-      });
-
-      return { totalWaterSaved, totalWaterUsed, lastIrrigateEvents };
-    }, [monitorNode]);
-
-  // ------------------------
-  // 5) Last Connection Icon / Charts
-  // ------------------------
-  // We'll show lastConnectionTime in the tooltip
-  const [showReportedTooltip, setShowReportedTooltip] = useState(false);
-  const [showConnectivityTooltip, setShowConnectivityTooltip] = useState(false);
-  const lastReported = lastConnectionTime || "No data yet";
-
-  // If you want to decide connectivity based on time differences, do so here.
-  const [isConnected] = useState(true);
-
-  // Build chart configs with the real "currentValue" from latestReading
-  const [expandedIndex, setExpandedIndex] = useState(null);
+  // ============= BUILD CHART CONFIGS WITH LATEST SENSOR =============
   const charts = useMemo(() => {
     if (!latestReading) return chartConfigs;
     return chartConfigs.map((cfg) => {
       const val = latestReading[cfg.dataType];
-      if (val !== undefined) {
-        return {
-          ...cfg,
-          currentValue: `${val}`,
-        };
-      }
-      return cfg;
+      return val !== undefined ? { ...cfg, currentValue: String(val) } : cfg;
     });
   }, [latestReading]);
 
-  const handleChartClick = (index) => setExpandedIndex(index);
+  // ============= LAST REPORTED (TIME STAMP) =============
+  const lastReported = lastConnectionTime
+    ? formatTimestamp(lastConnectionTime)
+    : "No data yet";
+
+  // ============= UI LOGIC FOR HEADER ICONS / MODAL CHART =============
+  const [isConnected] = useState(true);
+  const [showReportedTooltip, setShowReportedTooltip] = useState(false);
+  const [showConnectivityTooltip, setShowConnectivityTooltip] = useState(false);
+
+  const [expandedIndex, setExpandedIndex] = useState(null);
+  const handleChartClick = (idx) => setExpandedIndex(idx);
   const handleCloseModal = () => setExpandedIndex(null);
   const handlePrevChart = () => {
     if (expandedIndex === null) return;
-    const newIndex = (expandedIndex - 1 + charts.length) % charts.length;
-    setExpandedIndex(newIndex);
+    setExpandedIndex((expandedIndex - 1 + charts.length) % charts.length);
   };
   const handleNextChart = () => {
     if (expandedIndex === null) return;
-    const newIndex = (expandedIndex + 1) % charts.length;
-    setExpandedIndex(newIndex);
+    setExpandedIndex((expandedIndex + 1) % charts.length);
   };
 
-  // ------------------------
-  // 6) Render the same layout
-  // ------------------------
   return (
     <div className="dashboard-container">
       {/* HEADER */}
       <div className="dashboard-header">
         <h1 className="page-title">Dashboard</h1>
         <div className="header-icons">
-          {/* Last reported data (from "data") */}
+          {/* Last reported data */}
           <div
             className="icon-wrapper"
             title="Last Reported Data"
             onMouseEnter={() => setShowReportedTooltip(true)}
             onMouseLeave={() => setShowReportedTooltip(false)}
-            onClick={() => setShowReportedTooltip((prev) => !prev)}
+            onClick={() => setShowReportedTooltip((p) => !p)}
           >
             <FaHistory size={24} />
             {showReportedTooltip && (
@@ -230,7 +211,7 @@ const Dashboard = () => {
             title="Connection Status"
             onMouseEnter={() => setShowConnectivityTooltip(true)}
             onMouseLeave={() => setShowConnectivityTooltip(false)}
-            onClick={() => setShowConnectivityTooltip((prev) => !prev)}
+            onClick={() => setShowConnectivityTooltip((p) => !p)}
           >
             <FaWifi size={24} color={isConnected ? "#00ff00" : "#ff0000"} />
             {showConnectivityTooltip && (
@@ -245,18 +226,13 @@ const Dashboard = () => {
       {/* ROW 1: Water Cards */}
       <div className="dashboard-row">
         <WaterSavedCard
-          totalSaved={`${totalWaterSaved} L`}
-          percentage="+8% Since last cycle" // or from DB if available
+          totalSaved={totalWaterSaved}
           backgroundColor="#9b8af7"
         />
-        <WaterUsedCard
-          totalUsed={`${totalWaterUsed} L`}
-          percentage="+5% Since last cycle"
-          backgroundColor="#ff7b7b"
-        />
+        <WaterUsedCard totalUsed={totalWaterUsed} backgroundColor="#ff7b7b" />
       </div>
 
-      {/* ROW 2: 4 Charts (Temperature, Humidity, Moisture, Light) */}
+      {/* ROW 2: 4 Charts */}
       <div className="dashboard-row charts-row">
         {charts.map((cfg, idx) => (
           <SensorChartCard
@@ -270,10 +246,10 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* LAST IRRIGATE TABLE -> from the 'monitor' node */}
+      {/* LAST IRRIGATE TABLE */}
       <LastIrrigateTable lastIrrigateEvents={lastIrrigateEvents} />
 
-      {/* MODAL (only if expandedIndex != null) */}
+      {/* CHART MODAL */}
       {expandedIndex !== null && (
         <ModalChart
           chartIndex={expandedIndex}

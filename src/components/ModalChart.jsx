@@ -19,12 +19,10 @@ const ModalChart = ({
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        {/* Close button */}
         <button className="modal-close" onClick={onClose}>
           <FaTimes />
         </button>
 
-        {/* Title row */}
         <div className="modal-title-row">
           <h2 className="modal-title">{title}</h2>
           <span className="modal-subtitle">{currentValue}</span>
@@ -38,12 +36,13 @@ const ModalChart = ({
           <FiArrowRight size={24} />
         </button>
 
-        {/* Large chart container -> same chart */}
         <div className="modal-chart-container">
+          {/* Here we pass showFullDate={true} so we see "02:25 : 13:01" */}
           <LineChartSensor
             dataType={dataType}
             datasetLabel={title}
             accentColor={accentColor}
+            showFullDate={true}
           />
         </div>
       </div>

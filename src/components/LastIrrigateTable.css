@@ -1,3 +1,5 @@
+/* src/components/LastIrrigateTable.css */
+
 .irrigate-table {
   flex: 1;
   background-color: #2a2d3e;
@@ -31,8 +33,12 @@
 }
 
 .irrigate-table-content {
-  max-height: 350px; /* or any suitable height */
+  max-height: 350px; /* or any limit you want */
   overflow-y: auto;
+}
+
+.hoverable-table tbody tr:hover {
+  background-color: #3b3e51; /* highlight color on hover */
 }
 
 table {
@@ -42,6 +48,7 @@ table {
 }
 
 thead th {
+  padding-left: 5px;
   text-align: left;
   font-weight: 500;
   padding-bottom: 0.8rem;
@@ -54,4 +61,5 @@ tbody tr {
 
 td {
   padding: 0.5rem 0;
+  padding-left: 5px;
 }

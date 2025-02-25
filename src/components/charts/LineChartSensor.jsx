@@ -1,4 +1,5 @@
 // src/components/charts/LineChartSensor.jsx
+
 import React, { useState, useEffect } from "react";
 import {
   Chart as ChartJS,
@@ -24,13 +25,37 @@ ChartJS.register(
   Legend
 );
 
-const LineChartSensor = ({ dataType, datasetLabel, accentColor }) => {
+/** Format "yyyy-mm-dd_HH-MM-SS" => just "HH:MM" */
+function formatTimeOnly(str) {
+  if (!str.includes("_")) return str; // fallback
+  const [datePart, timePart] = str.split("_"); // e.g. "2025-02-25", "13-01-05"
+  const [HH, MM] = timePart.split("-"); // ignoring seconds
+  return `${HH}:${MM}`; // "13:01"
+}
+
+/** Format "yyyy-mm-dd_HH-MM-SS" => "mm:dd : HH:MM" (previous style) */
+function formatDayTime(str) {
+  if (!str.includes("_")) return str;
+  const [datePart, timePart] = str.split("_");
+  const [yyyy, mm, dd] = datePart.split("-");
+  const [HH, MM] = timePart.split("-");
+  return `${mm}:${dd} : ${HH}:${MM}`; // "02:25 : 13:01"
+}
+
+/**
+ * @param {boolean} showFullDate – if true, we show day+time (e.g. "02:25 : 13:01")
+ *                                 if false, we only show the time (e.g. "13:01")
+ */
+const LineChartSensor = ({
+  dataType,
+  datasetLabel,
+  accentColor,
+  showFullDate,
+}) => {
   const [labels, setLabels] = useState([]);
   const [dataValues, setDataValues] = useState([]);
 
   useEffect(() => {
-    // Option A: each chart subscribes to /data
-    // Then we flatten out and build arrays for the chosen dataType
     const dataRef = ref(database, "data");
     const unsub = onValue(dataRef, (snapshot) => {
       if (!snapshot.exists()) {
@@ -39,23 +64,26 @@ const LineChartSensor = ({ dataType, datasetLabel, accentColor }) => {
         return;
       }
       const dataObj = snapshot.val();
-      // dataObj is { dateKey => { randomId => {humidity, temperature, etc.} } }
-      // We'll collect them in chronological order
+
       const dateKeys = Object.keys(dataObj).sort();
       const tempLabels = [];
       const tempValues = [];
 
       dateKeys.forEach((dk) => {
-        const randomObj = dataObj[dk];
-        if (randomObj && typeof randomObj === "object") {
-          const childKeys = Object.keys(randomObj);
-          // We'll just take the first child or you might want them all
-          const childKey = childKeys[0];
-          const reading = randomObj[childKey];
-          if (reading && reading[dataType] !== undefined) {
-            // Use the dateKey as the label, or parse it if needed
-            tempLabels.push(dk);
-            tempValues.push(reading[dataType]);
+        // Choose how to format each date key
+        const formattedKey = showFullDate
+          ? formatDayTime(dk)
+          : formatTimeOnly(dk);
+
+        const childObj = dataObj[dk];
+        if (childObj && typeof childObj === "object") {
+          const childIDs = Object.keys(childObj);
+          if (childIDs.length > 0) {
+            const reading = childObj[childIDs[0]];
+            if (reading && reading[dataType] !== undefined) {
+              tempLabels.push(formattedKey);
+              tempValues.push(reading[dataType]);
+            }
           }
         }
       });
@@ -65,7 +93,7 @@ const LineChartSensor = ({ dataType, datasetLabel, accentColor }) => {
     });
 
     return () => unsub();
-  }, [dataType]);
+  }, [dataType, showFullDate]);
 
   const data = {
     labels,
@@ -93,7 +121,7 @@ const LineChartSensor = ({ dataType, datasetLabel, accentColor }) => {
         grid: { color: "rgba(255,255,255,0.1)" },
       },
       x: {
-        ticks: { color: "#fff" },
+        ticks: { color: "#fff", maxRotation: 45 },
         grid: { color: "rgba(255,255,255,0.1)" },
       },
     },
