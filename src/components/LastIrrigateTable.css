@@ -1,9 +1,8 @@
 /* src/components/LastIrrigateTable.css */
-
 .irrigate-table {
   flex: 1;
   background-color: #2a2d3e;
-  border-radius: 12px;
+  border-radius: 20px; /* more rounded corners */
   color: #fff;
   padding: 1.5rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
@@ -33,22 +32,35 @@
 }
 
 .irrigate-table-content {
-  max-height: 350px; /* or any limit you want */
+  max-height: 350px;
   overflow-y: auto;
+  border-radius: 20px; /* round corners for content area */
 }
 
-.hoverable-table tbody tr:hover {
-  background-color: #3b3e51; /* highlight color on hover */
+/* Custom scrollbar (dark theme) */
+.irrigate-table-content::-webkit-scrollbar {
+  width: 8px; /* scrollbar thickness */
+}
+.irrigate-table-content::-webkit-scrollbar-thumb {
+  background-color: #3b3e51;
+  border-radius: 8px;
+}
+.irrigate-table-content::-webkit-scrollbar-track {
+  background-color: #2a2d3e;
 }
 
-table {
+.hoverable-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 1.1rem;
 }
 
+/* row hover highlight */
+.hoverable-table tbody tr:hover {
+  background-color: #3b3e51; /* highlight color */
+}
+
 thead th {
-  padding-left: 5px;
   text-align: left;
   font-weight: 500;
   padding-bottom: 0.8rem;
@@ -61,5 +73,4 @@ tbody tr {
 
 td {
   padding: 0.5rem 0;
-  padding-left: 5px;
 }

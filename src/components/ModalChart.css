@@ -9,14 +9,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* to ensure it sits above everything */
+  z-index: 9999;
 }
 
 .modal-content {
   position: relative;
   background-color: #2a2d3e;
-  padding: 1rem; /* minimal padding for bigger chart area */
-  border-radius: 12px;
+  padding: 1rem;
+  border-radius: 20px; /* more rounded corners */
   width: 80%;
   max-width: 1000px;
   color: #fff;
@@ -54,7 +54,7 @@
   opacity: 0.8;
 }
 
-/* Arrow buttons */
+/* Arrow Buttons */
 .arrow-button {
   position: absolute;
   top: 50%;

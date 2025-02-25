@@ -16,19 +16,25 @@ const ModalChart = ({
 
   const { title, accentColor, dataType, currentValue } = charts[chartIndex];
 
+  // Handler for clicking overlay => close if user clicks outside content
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content">
         <button className="modal-close" onClick={onClose}>
           <FaTimes />
         </button>
-
         <div className="modal-title-row">
           <h2 className="modal-title">{title}</h2>
           <span className="modal-subtitle">{currentValue}</span>
         </div>
 
-        {/* Arrow controls */}
+        {/* Arrow Controls */}
         <button className="arrow-button left-arrow" onClick={onPrevChart}>
           <FiArrowLeft size={24} />
         </button>
@@ -37,12 +43,13 @@ const ModalChart = ({
         </button>
 
         <div className="modal-chart-container">
-          {/* Here we pass showFullDate={true} so we see "02:25 : 13:01" */}
           <LineChartSensor
             dataType={dataType}
             datasetLabel={title}
             accentColor={accentColor}
-            showFullDate={true}
+            showFullDate={
+              true
+            } /* If you're using the "showFullDate" approach */
           />
         </div>
       </div>
