@@ -1,0 +1,83 @@
+/* src/Dashboard.css */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+  background-color: #202333;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* HEADER */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-title {
+  font-size: 2rem;
+  color: #fff;
+  margin: 0;
+}
+
+.header-icons {
+  display: flex;
+  gap: 1rem;
+}
+
+.icon-wrapper {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  cursor: pointer;
+  position: relative; /* for absolute-positioned tooltip */
+  transition: transform 0.2s ease;
+}
+
+.icon-wrapper:hover {
+  transform: scale(1.1);
+}
+
+/* Tooltip: raise z-index to float above charts */
+.tooltip-box {
+  position: absolute;
+  top: -60%;
+  right: 350%;
+  background-color: #2a2d3e;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  z-index: 9999;
+}
+
+/* ROWS */
+.dashboard-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+/* CHARTS ROW: we keep horizontal scrolling 
+     but be mindful that "overflow-x: auto" can sometimes 
+     clip absolutely-positioned children. 
+     If you still see clipping, consider overflow: visible 
+     or using a portal for tooltips. */
+.charts-row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin; /* for Firefox */
+}
+
+.charts-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.charts-row::-webkit-scrollbar-thumb {
+  background: #3b3e51;
+  border-radius: 3px;
+}

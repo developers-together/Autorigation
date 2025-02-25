@@ -1,0 +1,11 @@
+/* src/index.css */
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background-color: #202333;
+  color: #fff;
+}
+
+.dashboard {
+  padding: 2rem;
+}

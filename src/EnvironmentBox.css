@@ -1,0 +1,41 @@
+.env-box {
+  background-color: #2a2d3e;
+  border-radius: 8px;
+  padding: 1rem;
+  color: #fff;
+  width: 100%;
+  max-width: 300px; /* adjust as needed */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.env-box__title {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.env-box__metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.env-box__metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 6px;
+  background-color: #3b3e51;
+  padding: 0.5rem 0.75rem;
+}
+
+.env-box__metric-label {
+  font-size: 0.9rem;
+  color: #bfc1d0;
+}
+
+.env-box__metric-value {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+}
