@@ -5,16 +5,25 @@ import "./Dashboard.css";
 import { ref, onValue } from "firebase/database";
 import { database } from "./firebase";
 
+// Existing components
 import WaterSavedCard from "./components/WaterSavedCard";
 import WaterUsedCard from "./components/WaterUsedCard";
 import SensorChartCard from "./components/SensorChartCard";
-import LastIrrigateTable from "./components/LastIrrigateTable";
 import ModalChart from "./components/ModalChart";
+import LastIrrigateTable from "./components/LastIrrigateTable";
 
+// New widget components
+import FlowRateWidget from "./components/FlowRateWidget";
+import TempRangeWidget from "./components/TempRangeWidget";
+import HumRangeWidget from "./components/HumRangeWidget";
+import MoistRangeWidget from "./components/MoistRangeWidget";
+
+// Icons
 import { FaHistory, FaWifi } from "react-icons/fa";
 
 /**
- * Format "yyyy-mm-dd_HH-MM-SS" -> e.g. "02:25 : 13:01"
+ * Helper to format a timestamp string from "yyyy-mm-dd_HH-MM-SS"
+ * into "mm:dd : HH:MM"
  */
 function formatTimestamp(str) {
   if (!str.includes("_")) return str;
@@ -24,20 +33,7 @@ function formatTimestamp(str) {
   return `${mm}:${dd} : ${HH}:${MM}`;
 }
 
-/**
- * Convert a milliliter value to a string in ml or L if ≥ 1000.
- * For example: 500 => "500 ml", 1300 => "1.30 L"
- */
-function formatLiquid(mlAmount) {
-  if (!mlAmount || mlAmount < 0) mlAmount = 0;
-  if (mlAmount >= 1000) {
-    const liters = (mlAmount / 1000).toFixed(2);
-    return `${liters} L`;
-  }
-  return `${mlAmount} ml`;
-}
-
-// Chart config array for sensors
+// Chart config for sensor cards remains unchanged.
 const chartConfigs = [
   {
     title: "Temperature",
@@ -66,24 +62,24 @@ const chartConfigs = [
 ];
 
 const Dashboard = () => {
+  // Subscribe to sensor data from /data
   const [dataNode, setDataNode] = useState({});
+  // Subscribe to /monitor for irrigation events and water usage totals
   const [monitorNode, setMonitorNode] = useState({});
+  // Subscribe to /total for overall water totals
   const [totalNode, setTotalNode] = useState({});
 
   useEffect(() => {
-    // Subscribe to /data for sensor readings
     const dataRef = ref(database, "data");
     const unsubData = onValue(dataRef, (snapshot) => {
       setDataNode(snapshot.exists() ? snapshot.val() : {});
     });
 
-    // Subscribe to /monitor for last irrigate table
     const monitorRef = ref(database, "monitor");
     const unsubMonitor = onValue(monitorRef, (snapshot) => {
       setMonitorNode(snapshot.exists() ? snapshot.val() : {});
     });
 
-    // Subscribe to /total for water saved/used
     const totalRef = ref(database, "total");
     const unsubTotal = onValue(totalRef, (snapshot) => {
       setTotalNode(snapshot.exists() ? snapshot.val() : {});
@@ -96,18 +92,18 @@ const Dashboard = () => {
     };
   }, []);
 
-  // ============= LATEST READING FROM "data" =============
+  // Derive the latest sensor reading from /data
   const { latestReading, lastConnectionTime } = useMemo(() => {
     let latestReading = null;
     let lastConnectionTime = null;
     const dateKeys = Object.keys(dataNode).sort();
-    if (dateKeys.length) {
+    if (dateKeys.length > 0) {
       const lastKey = dateKeys[dateKeys.length - 1];
       lastConnectionTime = lastKey;
       const randomObj = dataNode[lastKey];
       if (randomObj && typeof randomObj === "object") {
         const childIds = Object.keys(randomObj);
-        if (childIds.length) {
+        if (childIds.length > 0) {
           latestReading = randomObj[childIds[0]];
         }
       }
@@ -115,44 +111,7 @@ const Dashboard = () => {
     return { latestReading, lastConnectionTime };
   }, [dataNode]);
 
-  // ============= WATER SAVED/USED FROM "total" =============
-  const { totalWaterSaved, totalWaterUsed } = useMemo(() => {
-    const savedML = totalNode.totalWaterSaved || 0;
-    const usedML = totalNode.totalWaterUsed || 0;
-    return {
-      totalWaterSaved: formatLiquid(savedML),
-      totalWaterUsed: formatLiquid(usedML),
-    };
-  }, [totalNode]);
-
-  // ============= LAST IRRIGATE TABLE FROM "monitor" =============
-  const lastIrrigateEvents = useMemo(() => {
-    // "monitor" has date-keys => randomKey => { waterUsed }
-    // We'll parse them into an array for the table
-    const keys = Object.keys(monitorNode).sort();
-    let events = [];
-    keys.forEach((dateKey) => {
-      const subObj = monitorNode[dateKey];
-      if (subObj && typeof subObj === "object") {
-        Object.keys(subObj).forEach((rk) => {
-          const detail = subObj[rk];
-          if (detail && typeof detail === "object") {
-            // We'll store date/time by parsing dateKey if you want
-            // Or just store the raw dateKey
-            // waterUsed in ml => convert it
-            const waterUsedStr = formatLiquid(detail.waterUsed);
-            events.push({
-              dateKey, // e.g. "2025-02-25_15-17-07"
-              waterUsed: waterUsedStr,
-            });
-          }
-        });
-      }
-    });
-    return events;
-  }, [monitorNode]);
-
-  // ============= BUILD CHART CONFIGS WITH LATEST SENSOR =============
+  // Update sensor chart configurations with the latest reading
   const charts = useMemo(() => {
     if (!latestReading) return chartConfigs;
     return chartConfigs.map((cfg) => {
@@ -161,16 +120,52 @@ const Dashboard = () => {
     });
   }, [latestReading]);
 
-  // ============= LAST REPORTED (TIME STAMP) =============
+  // Format the last connection timestamp for header tooltip
   const lastReported = lastConnectionTime
     ? formatTimestamp(lastConnectionTime)
     : "No data yet";
 
-  // ============= UI LOGIC FOR HEADER ICONS / MODAL CHART =============
+  // Process total water values from /total (in ml), convert to L if needed.
+  function formatLiquid(mlAmount) {
+    if (!mlAmount || mlAmount < 0) mlAmount = 0;
+    if (mlAmount >= 1000) {
+      const liters = (mlAmount / 1000).toFixed(2);
+      return `${liters} L`;
+    }
+    return `${mlAmount} ml`;
+  }
+  const totalWaterSaved = formatLiquid(totalNode.totalWaterSaved);
+  const totalWaterUsed = formatLiquid(totalNode.totalWaterUsed);
+
+  // Build last irrigate events from /monitor.
+  const lastIrrigateEvents = useMemo(() => {
+    // Filter monitor keys that are timestamps (contain an underscore)
+    const keys = Object.keys(monitorNode).filter((k) => k.includes("_"));
+    let events = [];
+    keys.sort().forEach((dateKey) => {
+      const subObj = monitorNode[dateKey];
+      if (subObj && typeof subObj === "object") {
+        Object.keys(subObj).forEach((rk) => {
+          const eventData = subObj[rk];
+          if (eventData && typeof eventData === "object") {
+            events.push({
+              dateKey, // raw timestamp key
+              waterUsed: formatLiquid(eventData.waterUsed),
+            });
+          }
+        });
+      }
+    });
+    // Sort descending (newest first)
+    return events.reverse();
+  }, [monitorNode]);
+
+  // Header icon state
   const [isConnected] = useState(true);
   const [showReportedTooltip, setShowReportedTooltip] = useState(false);
   const [showConnectivityTooltip, setShowConnectivityTooltip] = useState(false);
 
+  // Chart modal state
   const [expandedIndex, setExpandedIndex] = useState(null);
   const handleChartClick = (idx) => setExpandedIndex(idx);
   const handleCloseModal = () => setExpandedIndex(null);
@@ -189,7 +184,6 @@ const Dashboard = () => {
       <div className="dashboard-header">
         <h1 className="page-title">Dashboard</h1>
         <div className="header-icons">
-          {/* Last reported data */}
           <div
             className="icon-wrapper"
             title="Last Reported Data"
@@ -204,8 +198,6 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-
-          {/* Connectivity */}
           <div
             className="icon-wrapper"
             title="Connection Status"
@@ -223,16 +215,35 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ROW 1: Water Cards */}
-      <div className="dashboard-row">
-        <WaterSavedCard
-          totalSaved={totalWaterSaved}
-          backgroundColor="#9b8af7"
-        />
-        <WaterUsedCard totalUsed={totalWaterUsed} backgroundColor="#ff7b7b" />
+      {/* FIRST ROW: Big Row using CSS Grid */}
+      <div className="dashboard-row big-row">
+        {/* Left: Water Saved (spans 2 columns) */}
+        <div className="big-col water-saved" style={{ gridColumn: "span 2" }}>
+          <WaterSavedCard totalSaved={totalWaterSaved} />
+        </div>
+
+        {/* Middle: Two widgets columns (each spans 1 column) */}
+        <div
+          className="big-col middle-widgets"
+          style={{ gridColumn: "span 2" }}
+        >
+          <div className="middle-row">
+            <FlowRateWidget />
+            <TempRangeWidget />
+          </div>
+          <div className="middle-row">
+            <HumRangeWidget />
+            <MoistRangeWidget />
+          </div>
+        </div>
+
+        {/* Right: Water Used (spans 2 columns) */}
+        <div className="big-col water-used" style={{ gridColumn: "span 2" }}>
+          <WaterUsedCard totalUsed={totalWaterUsed} />
+        </div>
       </div>
 
-      {/* ROW 2: 4 Charts */}
+      {/* SECOND ROW: Sensor Charts */}
       <div className="dashboard-row charts-row">
         {charts.map((cfg, idx) => (
           <SensorChartCard
@@ -246,10 +257,12 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* LAST IRRIGATE TABLE */}
-      <LastIrrigateTable lastIrrigateEvents={lastIrrigateEvents} />
+      {/* THIRD ROW: Last Irrigate Table */}
+      <div className="dashboard-row">
+        <LastIrrigateTable lastIrrigateEvents={lastIrrigateEvents} />
+      </div>
 
-      {/* CHART MODAL */}
+      {/* Modal Chart */}
       {expandedIndex !== null && (
         <ModalChart
           chartIndex={expandedIndex}

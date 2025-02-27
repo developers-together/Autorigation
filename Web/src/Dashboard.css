@@ -1,4 +1,6 @@
 /* src/Dashboard.css */
+
+/* Overall container */
 .dashboard-container {
   display: flex;
   flex-direction: column;
@@ -9,11 +11,12 @@
   box-sizing: border-box;
 }
 
-/* HEADER */
+/* Header styling */
 .dashboard-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
 .page-title {
@@ -32,7 +35,7 @@
   align-items: center;
   color: #fff;
   cursor: pointer;
-  position: relative; /* for absolute-positioned tooltip */
+  position: relative;
   transition: transform 0.2s ease;
 }
 
@@ -40,44 +43,69 @@
   transform: scale(1.1);
 }
 
-/* Tooltip: raise z-index to float above charts */
 .tooltip-box {
   position: absolute;
-  top: -60%;
-  right: 350%;
+  top: 110%;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: #2a2d3e;
   color: #fff;
   padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   font-size: 0.9rem;
   white-space: nowrap;
   z-index: 9999;
 }
 
-/* ROWS */
-.dashboard-row {
+/* Grid layout for the first row (big-row) */
+.big-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Water Saved and Water Used cards span 2 columns each */
+.big-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.water-saved,
+.water-used {
+  /* Their internal styles come from their own CSS files */
+}
+
+/* Middle composite widget spans 2 columns */
+.middle-widgets {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  grid-column: span 2;
+}
+
+/* Each middle row holds one widget each; side by side */
+.middle-row {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+/* Charts row for sensor charts */
+.charts-row {
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
 }
 
-/* CHARTS ROW: we keep horizontal scrolling 
-     but be mindful that "overflow-x: auto" can sometimes 
-     clip absolutely-positioned children. 
-     If you still see clipping, consider overflow: visible 
-     or using a portal for tooltips. */
-.charts-row {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: thin; /* for Firefox */
+/* Common card style for consistency */
+.card-like {
+  background-color: #2a2d3e;
+  border-radius: 20px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  color: #fff;
 }
 
-.charts-row::-webkit-scrollbar {
-  height: 6px;
-}
-
-.charts-row::-webkit-scrollbar-thumb {
-  background: #3b3e51;
-  border-radius: 3px;
-}
+/* You can add additional responsive rules as needed */

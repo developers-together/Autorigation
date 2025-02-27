@@ -1,0 +1,33 @@
+/* src/components/RangeWidget.css */
+.range-widget {
+  background-color: #2a2d3e;
+  border-radius: 10px;
+  padding: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+}
+
+.widget-label {
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  text-align: center;
+}
+
+.range-inputs {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.range-inputs input {
+  width: 100%;
+  border-radius: 6px;
+  padding: 0.3rem;
+  border: 1px solid #444;
+  background-color: #3b3e51;
+  color: #fff;
+  text-align: center;
+}
