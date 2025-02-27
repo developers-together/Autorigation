@@ -34,7 +34,7 @@
 .irrigate-table-content {
   max-height: 350px;
   overflow-y: auto;
-  border-radius: 20px; /* round corners for content area */
+  border-radius: 0px 20px 20px 20px; /* round corners for content area */
 }
 
 /* Custom scrollbar (dark theme) */

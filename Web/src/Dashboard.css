@@ -45,9 +45,8 @@
 
 .tooltip-box {
   position: absolute;
-  top: 110%;
-  left: 50%;
-  transform: translateX(-50%);
+  top: -70%;
+  transform: translateX(-130%);
   background-color: #2a2d3e;
   color: #fff;
   padding: 0.5rem 1rem;
@@ -70,11 +69,6 @@
 .big-col {
   display: flex;
   flex-direction: column;
-}
-
-.water-saved,
-.water-used {
-  /* Their internal styles come from their own CSS files */
 }
 
 /* Middle composite widget spans 2 columns */
@@ -108,4 +102,44 @@
   color: #fff;
 }
 
-/* You can add additional responsive rules as needed */
+.water-saved {
+  grid-column: span 2;
+  background: linear-gradient(
+    135deg,
+    #00c6ff,
+    #0072ff
+  ); /* cool blue gradient */
+  border-radius: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.water-used {
+  grid-column: span 2;
+  background: linear-gradient(
+    135deg,
+    #f77062,
+    #fe5196
+  ); /* warm pink gradient */
+  border-radius: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.middle-widgets {
+  grid-column: span 2;
+  display: grid;
+  gap: 0.8rem;
+  background: linear-gradient(135deg, #667eea, #764ba2); /* purple gradient */
+  border-radius: 20px;
+  padding: 0.5rem;
+}
+
+.widget-cell {
+  background-color: rgba(255, 255, 255, 0.1); /* translucent overlay */
+  border-radius: 10px;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.9rem;
+}
