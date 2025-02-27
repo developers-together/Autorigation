@@ -1,5 +1,5 @@
 // src/components/ChatAssistant.jsx
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./ChatAssistant.css";
 import {
   FaRobot,
@@ -11,6 +11,10 @@ import {
 
 const ChatAssistant = () => {
   const [open, setOpen] = useState(false);
+  const [panelWidth, setPanelWidth] = useState(350); // default width in px
+  const [dragging, setDragging] = useState(false);
+  const panelRef = useRef(null);
+
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
@@ -18,12 +22,13 @@ const ChatAssistant = () => {
     "http://localhost:5001/v1/chat/completions"
   );
 
+  // Toggle the panel open/close
   const togglePanel = () => setOpen((prev) => !prev);
   const toggleSettings = () => setShowSettings((prev) => !prev);
 
+  // Handle sending a message (using POST)
   const handleSend = async () => {
     if (message.trim() === "") return;
-
     const userMsg = { text: message, sender: "user" };
     setMessages((prev) => [...prev, userMsg]);
 
@@ -124,15 +129,55 @@ Keep the sections clear and spaced for a cool, modern look.
     setMessages([]);
   };
 
+  // Resizer handlers
+  const handleMouseDown = (e) => {
+    setDragging(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!dragging) return;
+      // Calculate new width from the right edge of the window
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth > 200 && newWidth < 600) {
+        // set min and max width
+        setPanelWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setDragging(false);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragging]);
+
   return (
     <>
+      {/* Floating AI Button (hidden when panel is open) */}
       {!open && (
-        <div className="chat-assistant-button" onClick={togglePanel}>
+        <div
+          className="chat-assistant-button animate-rise"
+          onClick={togglePanel}
+        >
           <FaRobot size={24} color="#fff" />
         </div>
       )}
 
-      <div className={`chat-panel ${open ? "open" : ""}`}>
+      {/* Chat Side Panel */}
+      <div
+        ref={panelRef}
+        className={`chat-panel ${open ? "open" : ""}`}
+        style={{ width: panelWidth, right: open ? 0 : `-${panelWidth}px` }}
+      >
+        {/* Resizer Handle */}
+        <div className="resizer" onMouseDown={handleMouseDown} />
+
         <div className="chat-panel-header">
           <div className="header-left">
             <h3>AI Assistant</h3>
