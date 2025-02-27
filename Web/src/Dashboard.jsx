@@ -1,5 +1,6 @@
 // src/Dashboard.jsx
 import React, { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import "./Dashboard.css";
 
 import { ref, onValue } from "firebase/database";
@@ -214,7 +215,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
       {/* FIRST ROW (WATER SAVED - MIDDLE WIDGETS - WATER USED) */}
       {/* DO NOT CHANGE THIS PART: EXACT middle widget code as you have it now */}
       <div className="dashboard-row big-row">
@@ -244,7 +244,6 @@ const Dashboard = () => {
           <WaterUsedCard totalUsed={totalWaterUsed} />
         </div>
       </div>
-
       {/* SECOND ROW: Sensor Charts */}
       <div className="dashboard-row charts-row">
         {charts.map((cfg, idx) => (
@@ -258,12 +257,10 @@ const Dashboard = () => {
           />
         ))}
       </div>
-
       {/* THIRD ROW: Last Irrigate Table */}
       <div className="dashboard-row">
         <LastIrrigateTable lastIrrigateEvents={lastIrrigateEvents} />
       </div>
-
       {/* Modal for full-page chart */}
       {expandedIndex !== null && (
         <ModalChart
@@ -274,9 +271,15 @@ const Dashboard = () => {
           onNextChart={handleNextChart}
         />
       )}
-
+      const [isConnected, setIsConnected] = useState(false);
       {/* Floating Chat Assistant Button/Panel */}
       <ChatAssistant />
+      {/* Footer area with button to navigate to /api-docs */}
+      <div className="dashboard-footer">
+        <Link to="/api-docs" className="api-docs-button">
+          View API Documentation
+        </Link>
+      </div>
     </div>
   );
 };
