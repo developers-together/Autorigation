@@ -271,7 +271,7 @@ const Dashboard = () => {
           onNextChart={handleNextChart}
         />
       )}
-      const [isConnected, setIsConnected] = useState(false);
+
       {/* Floating Chat Assistant Button/Panel */}
       <ChatAssistant />
       {/* Footer area with button to navigate to /api-docs */}
