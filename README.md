@@ -169,4 +169,4 @@ If you have any questions, suggestions, or contributions, please open an issue o
 ----------
 
 **AutoRigation**  
-_Maximize efficiency, minimize waste, and ensure optimal plant health with smart, data-driven irrigation._
+_Maximize efficiency, minimize waste, and ensure optimal plant health with smart, data-driven irrigation.
